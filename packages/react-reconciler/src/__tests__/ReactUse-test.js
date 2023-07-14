@@ -1765,4 +1765,33 @@ describe('ReactUse', () => {
         'to a module that was originally written for the server.',
     ]);
   });
+
+  test('basic use(async function)', async () => {
+    function fetchDataFromCache(urlPath) {
+      return Promise.resolve({contents: 'ABC'});
+    }
+
+    async function fetchTodo(id) {
+      const data = await fetchDataFromCache(`/api/todos/${id}`);
+      return {contents: data.contents};
+    }
+
+    function App() {
+      const todo = use(fetchTodo('id'));
+      return (
+        <Suspense fallback={<Text text="Loading..." />}>
+          <Text text={todo.contents} />
+        </Suspense>
+      );
+    }
+
+    const root = ReactNoop.createRoot();
+    await act(() => {
+      startTransition(() => {
+        root.render(<App />);
+      });
+    });
+    assertLog(['ABC']);
+    expect(root).toMatchRenderedOutput('ABC');
+  });
 });
